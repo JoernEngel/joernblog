@@ -11,8 +11,8 @@ My solution back then was ad-hoc, but seemed to work well.  Basically
 you take three samples, discard the outlier and average the remaining
 two.
 
-Examples:
 | Raw			| Filtered		|
+| ---------------------	| ---------------------	|
 | 0, 0, 9, 0, 0, 0	| 0, 0, 0, 0, 0, 0	|
 | 0, 0, 1, 1, 1, 1	| 0, 0, 0, 1, 1, 1	|
 | 0, 0, 2, 4, 4, 4	| 0, 0, 1, 3, 4, 4	|
