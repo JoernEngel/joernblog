@@ -11,6 +11,24 @@ My solution back then was ad-hoc, but seemed to work well.  Basically
 you take three samples, discard the outlier and average the remaining
 two.
 
+```
+int s0, s1, s2;
+
+while (sleep(sample_interval)) {
+	s0 = s1; s1 = s2; s2 = get_sample();
+	int avg = (s0 + s1 + s2) / 3;
+	int d0 = abs(s0 - avg);
+	int d1 = abs(s1 - avg);
+	int d2 = abs(s2 - avg);
+	if (d0 > d1 && d0 > d2)
+		use_filtered_sample((s1 + s2) / 2);
+	else if (d1 > d2)
+		use_filtered_sample((s0 + s2) / 2);
+	else
+		use_filtered_sample((s0 + s1) / 2);
+}
+```
+
 | Raw			| Filtered		|
 | ---------------------	| ---------------------	|
 | 0, 0, 9, 0, 0, 0	| 0, 0, 0, 0, 0, 0	|
@@ -36,6 +54,33 @@ better than my ad-hoc solution.  It responds quicker to a ramp and
 remains closer to the signal with two noise samples inside the window.
 Median filter should also consume less CPU, in case it makes a
 difference.
+
+```
+int s0, s1, s2;
+
+while (sleep(sample_interval)) {
+	s0 = s1; s1 = s2; s2 = get_sample();
+	if (s0 < s1) {
+		if (s1 < s2)
+			use_filtered_sample(s1);
+		else
+			use_filtered_sample(s2);
+	} else /* s0 >= s1 */ {
+		if (s1 >= s2)
+			use_filtered_sample(s1);
+		else
+			use_filtered_sample(s2);
+	}
+}
+```
+
+| Raw			| Filtered		|
+| ---------------------	| ---------------------	|
+| 0, 0, 9, 0, 0, 0	| 0, 0, 0, 0, 0, 0	|
+| 0, 0, 1, 1, 1, 1	| 0, 0, 0, 1, 1, 1	|
+| 0, 0, 2, 4, 4, 4	| 0, 0, 2, 4, 4, 4	|
+| 0, 0, 9, 0, 0, 7	| 0, 0, 0, 0, 0, 0	|
+| 0, 0, 9, 0, 7, 0	| 0, 0, 0, 7, 0, 0	|
 
 As a side note, it is generally better to have a high sample rate and
 aggressive filter than a low sample rate.  Sampling at 1kHz with
