@@ -39,12 +39,12 @@ Engel coding for it.
 Algorithm
 ---------
 
-Step 1: Sort symbols by histogram.
-Step 2: Create initial bitlen for each symbol.
-Step 3: Calculate credit/debt.
-Step 4: Use up credit/repay debt.
+Step 1: Sort symbols by histogram.  
+Step 2: Create initial bitlen for each symbol.  
+Step 3: Calculate credit/debt.  
+Step 4: Use up credit/repay debt.  
 
-Sorting symbols has known solutions.  Yann's version is Huff0 is
+Sorting symbols has known solutions.  Yann's version in Huff0 is
 pretty good.  Initial bitlen is round(-log2(p(sym))), so a sym with
 p=.5 gets bitlen=1, p=.25 gets bitlen=2, etc.  Boundary between 1-bit
 and 2-bit symbols has 1.5 = -log2(p) or p = 2^(-1.5), about .353.
