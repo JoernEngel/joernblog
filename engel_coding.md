@@ -129,3 +129,8 @@ similar result, sometimes a little better, sometimes a little worse.
 Definitely beats Charles' heuristic, which afaics is used by Huff0 as
 well.  Package-merge would be optimal, but I expect it to be
 noticeably slower.
+
+UPDATE:
+Here is the [source code](engel_coding.c).  If you find any bugs or
+improvements, I would appreciate a comment.  License should probably
+be 2-clause BSD, but I haven't talked to legal folks yet.
