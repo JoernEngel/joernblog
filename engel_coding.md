@@ -91,6 +91,7 @@ Since your symbols are still sorted, the cheapest symbols necessarily
 are right at the boundary between N bits and N+1 bits.  So you only
 have to consider MAX_BITS-1 symbols and pick the one that costs you
 the least per slot.  Cost is calculated as
+
 	sym.cost = sym.hgram << sym.bitlen;
 
 Finally, you don't want to repay too much.  If you need to free 3
