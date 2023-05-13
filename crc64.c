@@ -44,8 +44,21 @@ u64 crc64_clmul(u64 crc, const void *data, size_t n)
 		 * When possible, we start using 8 fold chains, consuming 128
 		 * bytes or 1024 bits at a time.
 		 */
-		a = _mm_loadu_si128(data) ^ _mm_set_epi64x(0, ~crc);
-		b = _mm_loadu_si128(data+ 16);
+		if ((unsigned long)data&15) {
+			/* Align data first - mostly helps hyperthreads */
+			size_t skip = 16-((unsigned long)data&15);
+			memcpy(buf+skip, data, 32);
+			write64(buf+skip, ~crc ^ read64(buf+skip));
+			start = buf;
+			a = _mm_loadu_si128(start);
+			b = _mm_loadu_si128(start+16);
+			n += skip;
+			data -= skip;
+			memset(buf, 0, sizeof(buf));
+		} else {
+			a = _mm_loadu_si128(data) ^ _mm_set_epi64x(0, ~crc);
+			b = _mm_loadu_si128(data+ 16);
+		}
 		c = _mm_loadu_si128(data+ 32);
 		d = _mm_loadu_si128(data+ 48);
 		e = _mm_loadu_si128(data+ 64);
@@ -149,7 +162,6 @@ chain2:
 	return ~_mm_extract_epi64(d, 1);
 }
 
-
 static inline __m512i xor3(__m512i a, __m512i b, __m512i c)
 {
 	return _mm512_ternarylogic_epi64(a, b, c, 0x96);
@@ -197,20 +209,16 @@ u64 crc64_pclmul(u64 crc, const void *data, size_t n)
 
 			a = _mm512_loadu_si512(buf);
 			b = _mm512_loadu_si512(buf+64);
-			n -= 128-skip;
-			data += 128-skip;
-			c = _mm512_loadu_si512(data+0);
-			d = _mm512_loadu_si512(data+64);
-			n -= 128;
-			data += 128;
+			n += skip;
+			data -= skip;
 		} else {
 			a = _mm512_loadu_si512(data) ^ _mm512_set_epi64(0, 0, 0, 0, 0, 0, 0, ~crc);
 			b = _mm512_loadu_si512(data+ 64);
-			c = _mm512_loadu_si512(data+128);
-			d = _mm512_loadu_si512(data+192);
-			n -= 256;
-			data += 256;
 		}
+		c = _mm512_loadu_si512(data+128);
+		d = _mm512_loadu_si512(data+192);
+		n -= 256;
+		data += 256;
 		while (n>=256) {
 			a = pfold3(a, mu4, data+  0);
 			b = pfold3(b, mu4, data+ 64);
