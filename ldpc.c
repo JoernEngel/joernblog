@@ -111,31 +111,50 @@ static inline u64 rotl64(u64 val, u8 rot)
 	return val<<l | val>>r;
 }
 
-static int popcnt64(u64 arg) {
+static inline u64 rotr64(u64 val, u8 rot)
+{
+	u8 r = rot&63;
+	u8 l = (64-r) & 63;
+	return val<<l | val>>r;
+}
+
+static int popcnt64(u64 arg)
+{
 	return __builtin_popcountll(arg);
 }
 
 
 static u64 alpha_mask[8] = {
-	0b10000100010010111,
-	0b1000000000011000010000000100011,
-	0b10100000010000000000001100000011,
-	0b10010000000000010000000001000001000101,
-	0b10000000000000010010000100100000000000000011,
-	0b1000010000100000000000000010100000000010000001,
-	0b10100000000001001000000000100000000001000000001,
-	0b10001000000000000100000010000001000000001000000001,
+	0b100010010000000000010111,
+	0b1010000010000000000000000001100011,
+	0b1000010000000000000000000100000000110000011,
+	0b10001000000000001000000000000100100000000011,
+	0b1000000000001000000001000010000000101000000001,
+	0b10000000000100010000100000000001000000100000001,
+	0b10000010000000001000010000001000000100000000001,
+	0b10010000010000000000000100000000000010000001001,
+};
+
+static u64 alpha_im[8] = {
+	0b100010011000101110111010100101000111110000,
+	0b10101010001000101000001000011011,
+	0b10000100001000010000100,
+	0b1000100010001000000010,
+	0b10000000000010000000,
+	0b1000000000010001000,
+	0b1000001000001000101,
+	0b1001001000001000000,
 };
 
 static u8 alpha_bit[8][6] = { /* bit 0 is implicit */
-	{ 1,  2,  4,  7, 11, 16 },
-	{ 1,  5, 13, 18, 19, 30 },
-	{ 1,  8,  9, 22, 29, 31 },
-	{ 2,  6, 12, 22, 34, 37 },
-	{ 1, 17, 20, 25, 28, 43 },
-	{ 7, 17, 19, 35, 40, 45 },
-	{ 9, 20, 30, 33, 44, 46 },
-	{ 9, 18, 25, 32, 45, 49 },
+	{ 1,  2,  4, 16, 19, 23 },
+	{ 1,  5,  6, 25, 31, 33 },
+	{ 1,  7,  8, 17, 37, 42 },
+	{ 1, 11, 14, 27, 39, 43 },
+	{ 9, 11, 19, 24, 33, 45 },
+	{ 8, 15, 26, 31, 35, 46 },
+	{11, 18, 25, 30, 40, 46 },
+	{ 3, 10, 23, 37, 43, 46 },
 };
 
 static void alpha_syndrome(u64 data[9], u64 syndrome[1])
@@ -176,7 +195,7 @@ static int map_one(u64 syndrome)
 {
 	static int initialized;
 	static u32 map[1024];
-	u64 m = 0xf7f9e49afull;
+	u64 m = 0x1dedf3c9ull;
 	if (!initialized) {
 		initialized=1;
 		for (int i=0; i<512; i++) {
@@ -314,14 +333,57 @@ static int alpha_repair_recursive(u64 data[9], int budget, int threshold, int mi
 	return -1;
 }
 
-static int alpha_repair(u64 data[9])
+static u128 clmul(u64 a, u64 b)
+{
+	__m128i va={}, vb={};
+	va = _mm_insert_epi64(va, a, 0);
+	vb = _mm_insert_epi64(vb, b, 0);
+	va = _mm_clmulepi64_si128(va, vb, 0);
+	u128 ret = _mm_extract_epi64(va, 1);
+	ret <<= 64;
+	ret ^= _mm_extract_epi64(va, 0);
+	return ret;
+}
+static u64 clmulhi(u64 a, u64 b) { return clmul(a, b) >> 64; }
+static u64 clmullo(u64 a, u64 b) { return clmul(a, b); }
+
+static int chip_repair(u64 data[9])
 {
 	u64 syndrome=0;
 	alpha_syndrome(data, &syndrome);
 	syndrome ^= data[8];
-	int pc = popcnt64(syndrome);
-	if (!pc)
+	if (!syndrome)
 		return 0;
+	for (int rot=0; rot<64; rot+=16) {
+		u64 rs = rotl64(syndrome, rot);
+		u64 mask = ~0xffffull;
+		if (!(rs & mask)) { /* ecc corruption */
+			data[8] ^= syndrome;
+			return popcnt64(syndrome);
+		}
+		for (int i=0; i<8; i++) {
+			u64 error = clmulhi(rs, alpha_im[i]);
+			u64 mod = rs ^ clmullo(error, alpha_mask[i]);
+			if (!mod && (error == (u16)error)) {
+				data[i] ^= rotr64(error, rot);
+				return popcnt64(error);
+			}
+		}
+	}
+	return -1;
+}
+
+static int alpha_repair(u64 data[9])
+{
+	int ret = chip_repair(data);
+	if (ret>0)
+		return ret;
+	u64 syndrome=0;
+	alpha_syndrome(data, &syndrome);
+	syndrome ^= data[8];
+	if (!syndrome)
+		return 0;
+	int pc = popcnt64(syndrome);
 	if (pc<=4) { /* only parity bit errors */
 		data[8] ^= syndrome;
 		return pc;
@@ -352,6 +414,22 @@ static int alpha_repair(u64 data[9])
 			return 5;
 	}
 	return -1;
+}
+
+static int chip_corrupt(u64 data[9], int i, int verbose)
+{
+#if 1 /* to systematically try all 2359296 possibilities */
+	int word = (i>>18) % 9;
+	int subword = (i>>16) & 3;
+	u64 error = i & 0xffff;
+#else
+	int word = rand_n(9);
+	int subword = rand_n(4) * 16;
+	u64 error = rand_range(1, 65536) << subword;
+#endif
+	data[word] ^= error;
+	if (verbose) printf("corrupt %2d %64llb\n", word, error);
+	return popcnt64(error);
 }
 
 static void alpha_corrupt(u64 data[9], int count, int verbose)
@@ -437,8 +515,9 @@ static int secded_repair(u64 data[9])
 int main(void)
 {
 	int errors=2; /* number of errors to generate */
-	int verbose=0;
-	int use_secded=1;
+	int verbose=1;
+	int use_secded=0;
+	int use_chipcorrupt=0;
 	int iterations=1000000;
 
 	int success_count=0;
@@ -455,7 +534,7 @@ int main(void)
 		u64 copy[9]={};
 		memcpy(copy, orig, sizeof(orig));
 
-		alpha_corrupt(copy, errors, verbose);
+		if (use_chipcorrupt) errors = chip_corrupt(copy, i, verbose); else alpha_corrupt(copy, errors, verbose);
 		u64 copy2[9]={};
 		memcpy(copy2, copy, sizeof(copy));
 		int ret = use_secded ? secded_repair(copy) : alpha_repair(copy);
