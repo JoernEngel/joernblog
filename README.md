@@ -9,3 +9,4 @@ What has been posted cannot be unposted.
 2024-02-05 [Improving ECC-DRAM repair - part 2](ldpc_chipkill.md)  
 2024-02-07 [Whisperrandom](whisperrandom.md)  
 2024-02-23 [A hacker's guide to Galois Field arithmetic](galois.md)  
+2024-05-09 [An atomic queue](atomic_queue.md)  
