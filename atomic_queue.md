@@ -9,6 +9,7 @@ So I've written one.  Design goal was to encapsulate as much of the complexity
 as possible:
 - Multiple producers are fine.
 - Multiple consumers are fine.
+- Queue is ordered.
 - If you get the size wrong, the queue will automatically grow.
 
 Queue design is essentially a ring-buffer with head- and tail-counters.  Atomic
@@ -80,3 +81,20 @@ give you any guarantees.
 
 If you are ok with those caveats, feel free to use [my code](atomic_queue.c).
 Or read it for inspiration before writing your own.
+
+
+# Update: Ordered queue
+
+Something I failed to mention is that my atomic queue preserves the order.  If
+a producer enqueues A before B, a consumer will never see B before A.
+
+Given many threads, in most cases A and B will be handled by two different
+threads and the order doesn't matter.  But it might.  One example might be
+processing SCSI commands including task aborts.  If those end up on a queue, you
+absolutely don't want the task abort to get processed before the command it was
+supposed to abort.  Otherwise you end up claiming "this write will no longer
+happen" shortly before doing the actual write.
+
+If you don't have to preserve order, it is easy to come up with an alternative
+queue design that performs better.  You will even preserve order most of the
+time.  But rare exceptions lead to nasty surprises and months of debugging.
