@@ -11,3 +11,4 @@ What has been posted cannot be unposted.
 2024-02-23 [A hacker's guide to Galois Field arithmetic](galois.md)  
 2024-05-09 [An atomic queue](atomic_queue.md)  
 2024-07-25 [Signal safe malloc](signal_safe_malloc.md)  
+2024-12-08 [Ufence](ufence.md)  
