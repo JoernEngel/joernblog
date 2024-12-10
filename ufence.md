@@ -36,10 +36,10 @@ It makes a huge difference.
 ufence
 ------
 
-Having experienced some userspace memory corruptions after fixing all
-kernel memory corruptions, I wanted to get the same functionality in
-userspace.  The basic idea isn't hard, you ensure all allocations are
-surrounded by guard pages to catch overflows/underruns and use
+Having experienced some userspace memory corruptions after fixing[^1]
+all kernel memory corruptions, I wanted to get the same functionality
+in userspace.  The basic idea isn't hard, you ensure all allocations
+are surrounded by guard pages to catch overflows/underruns and use
 mprotect() when the object is freed to catch use-after-free.
 
 [Here](ufence.c) is my version.  It has all the functionality I want
@@ -53,3 +53,9 @@ typically the domain of the application, not the memory allocator.  We
 also currently have half a dozen standard allocators to choose from
 and I don't want to touch them all.  So consider this a flatpack
 debugger.  Hexkey not included.
+
+
+[^1] I am taking credit for work done by others here.  Most bugs were
+fixed by others doing the painful work.  What I can take credit for is
+moving the bugs from the hopeless category to the mere hard work
+category.
