@@ -12,3 +12,4 @@ What has been posted cannot be unposted.
 2024-05-09 [An atomic queue](atomic_queue.md)  
 2024-07-25 [Signal safe malloc](signal_safe_malloc.md)  
 2024-12-08 [Ufence](ufence.md)  
+2024-12-12 [collision-free hashtables](collision_free_hashtable.md)  
