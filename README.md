@@ -13,3 +13,5 @@ What has been posted cannot be unposted.
 2024-07-25 [Signal safe malloc](signal_safe_malloc.md)  
 2024-12-08 [Ufence](ufence.md)  
 2024-12-12 [collision-free hashtables](collision_free_hashtable.md)  
+2025-02-13 [inversing multiplication](inverse_multiplication.md)  
+2025-02-13 [new histogram speed record](histogram.md)  
