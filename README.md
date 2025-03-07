@@ -15,3 +15,4 @@ What has been posted cannot be unposted.
 2024-12-12 [collision-free hashtables](collision_free_hashtable.md)  
 2025-02-13 [inversing multiplication](inverse_multiplication.md)  
 2025-02-13 [new histogram speed record](histogram.md)  
+2025-03-06 [Measuring core cycles](rdcore.md)  
