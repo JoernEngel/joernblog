@@ -17,3 +17,4 @@ What has been posted cannot be unposted.
 2025-02-13 [new histogram speed record](histogram.md)  
 2025-03-06 [Measuring core cycles](rdcore.md)  
 2025-03-19 [printk musings](printk.md)  
+2025-03-31 [vli64](vli64.md)  
