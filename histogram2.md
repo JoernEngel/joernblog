@@ -309,8 +309,9 @@ faster than my old scalar `hgram_8x4`.
 Code is still a bit of a mess and I want to clean things up before
 publishing it.  Forgive me.
 
+UPDATE: [Code](histogram.c) is available now.
 
-[^1] There is a surprisingly small Cabal of instruction counters,
+[^1]: There is a surprisingly small Cabal of instruction counters,
 people that care deeply about performance and learn all the associated
 tricks.  There are 10-20 well-known names that constantly pop up when
 searching stack overflow, blog posts, academic papers, etc.  I suspect
