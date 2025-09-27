@@ -82,3 +82,34 @@ is possible to remove the branches as well and the saved instruction
 will make a difference after that.
 
 Anyway, feel free to use this code if you find it useful.
+
+
+# Erratum - fast parsing problem
+
+In hindsight I dislike the decision to special-case byte 9.  To illustrate,
+let's encode -1ull with and without special-case:
+
+```
+0xff 0xfe 0xfe 0xfe 0xfe 0xfe 0xfe 0xfe 0xfe
+0xff 0xfe 0xfe 0xfe 0xfe 0xfe 0xfe 0xfe 0xfe 0x00
+```
+
+Without the special case, we need 10 bytes.  9 bytes are enough to encode all
+63bit numbers, but not the full 64bit range.  However, as encoding space is
+limited to 64bit numbers, we cheated and used the top bit of byte 9 directly.
+This saves one extra byte, which is an advantage.
+
+It is also a disadvantage if you want to write a fast parser.  Without the
+special case, you can quickly find the boundaries.  Each number must end in a
+byte with the top bit clear.  Once you have found the boundaries, it is easy to
+parse multiple numbers in parallel.  But if you cannot find the boundaries, the
+parser has to be mostly serial and therefore slow.
+
+This is essentially the same problem as parsing any other variable-length code,
+most notoriously x86 instructions.  If you cannot easily find boundaries, either
+you have to go slow or you have to go through extraordinary pains to implement
+fast parsers.
+
+Therefore, in hindsight, it is probably better to spend the 10th byte for large
+64bit numbers.  I won't adjust the code, you can probably figure it out
+yourself.
