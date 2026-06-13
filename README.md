@@ -21,3 +21,4 @@ What has been posted cannot be unposted.
 2025-03-31 [My own AVX512 histograms](histogram2.md)  
 2025-09-27 [Salt hydrate latent heat store](salt_hydrate.md)  
 2026-06-10 [MLSV notation](mlsv.md)  
+2026-06-12 [Vectorized Huffman](vectorized_huffman.md)  
